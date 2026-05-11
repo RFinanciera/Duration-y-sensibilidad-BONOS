@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Duration y Sensibilidad | Revolución Financiera</title>
+    <link rel="icon" href="revfin_logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #FAFBFC;
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #F1F3F5;
+            --text-primary: #1A1D23;
+            --text-secondary: #5A6270;
+            --text-muted: #8C939E;
+            --accent: #E63B2E;
+            --accent-light: #FEF0EF;
+            --accent-dark: #C4291E;
+            --border: #E5E8EB;
+            --border-light: #F0F2F4;
+            --success: #22C55E;
+            --success-light: #F0FDF4;
+            --warning: #F59E0B;
+            --warning-light: #FFFBEB;
+            --danger: #EF4444;
+            --danger-light: #FEF2F2;
+            --blue: #3B82F6;
+            --blue-light: #EFF6FF;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header {
+            background: rgba(255,255,255,0.92);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+            position: sticky; top: 0; z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .header-inner {
+            max-width: 1100px; margin: 0 auto; padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        }
+        .header-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+        .header-brand img { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; }
+        .header-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+        .header-brand-name { font-weight: 700; font-size: 16px; }
+        .header-brand-sub { font-size: 12px; color: var(--text-muted); }
+        .header-title { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--text-secondary); letter-spacing: 0.5px; text-transform: uppercase; }
+
+        .hero {
+            background: linear-gradient(135deg, #2D3340 0%, #434D5E 100%);
+            padding: 56px 24px 48px; text-align: center; position: relative; overflow: hidden;
+        }
+        .hero::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 30% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .hero h1 { font-size: clamp(26px, 4.5vw, 38px); font-weight: 700; color: #FFFFFF; margin-bottom: 12px; position: relative; letter-spacing: -0.5px; }
+        .hero h1 span { color: var(--blue); }
+        .hero p { font-size: clamp(15px, 2.5vw, 18px); color: rgba(255,255,255,0.6); max-width: 640px; margin: 0 auto; position: relative; }
+
+        .main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+
+        .card {
+            background: var(--bg-secondary); border-radius: var(--radius-lg);
+            border: 1px solid var(--border); padding: 28px; margin-bottom: 28px; box-shadow: var(--shadow-sm);
+        }
+        .card-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+        .card-subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+
+        .input-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px; margin-bottom: 28px;
+        }
+        .input-group label {
+            display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;
+        }
+        .input-group input, .input-group select {
+            width: 100%; padding: 12px 16px; border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif;
+            font-size: 16px; color: var(--text-primary); background: var(--bg-primary);
+            transition: border-color 0.2s; outline: none;
+        }
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* METRIC CARDS */
+        .metrics {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px; margin-bottom: 28px;
+        }
+        .metric {
+            background: var(--bg-tertiary); border-radius: var(--radius-md);
+            padding: 20px; text-align: center; border: 1px solid var(--border-light);
+            transition: transform 0.2s;
+        }
+        .metric:hover { transform: translateY(-2px); }
+        .metric-label {
+            font-size: 12px; font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+        }
+        .metric-value {
+            font-family: 'Space Mono', monospace; font-size: 32px; font-weight: 700;
+        }
+        .metric-unit { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+        .metric-blue .metric-value { color: var(--blue); }
+        .metric-accent .metric-value { color: var(--accent); }
+        .metric-green .metric-value { color: var(--success); }
+
+        /* SLIDER */
+        .slider-section { margin-bottom: 28px; }
+        .slider-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
+        }
+        .slider-title { font-size: 16px; font-weight: 700; }
+        .slider-value-display {
+            font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700;
+            padding: 6px 16px; border-radius: 100px;
+        }
+        .slider-negative { background: var(--danger-light); color: var(--danger); }
+        .slider-positive { background: var(--success-light); color: var(--success); }
+        .slider-neutral { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+        input[type="range"] {
+            width: 100%; height: 8px; -webkit-appearance: none; appearance: none;
+            background: linear-gradient(to right, var(--danger) 0%, var(--bg-tertiary) 50%, var(--success) 100%);
+            border-radius: 100px; outline: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 24px; height: 24px;
+            background: var(--bg-secondary); border: 3px solid var(--blue);
+            border-radius: 50%; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 24px; height: 24px; background: var(--bg-secondary);
+            border: 3px solid var(--blue); border-radius: 50%; cursor: pointer;
+        }
+        .slider-labels {
+            display: flex; justify-content: space-between; margin-top: 8px;
+            font-size: 12px; color: var(--text-muted);
+        }
+
+        /* IMPACT DISPLAY */
+        .impact-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;
+        }
+        .impact-card {
+            border-radius: var(--radius-md); padding: 20px; text-align: center;
+        }
+        .impact-card h4 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+        .impact-value {
+            font-family: 'Space Mono', monospace; font-size: 28px; font-weight: 700;
+        }
+        .impact-sub { font-size: 13px; margin-top: 4px; opacity: 0.8; }
+        .impact-loss { background: var(--danger-light); color: #991B1B; }
+        .impact-loss .impact-value { color: var(--danger); }
+        .impact-gain { background: var(--success-light); color: #166534; }
+        .impact-gain .impact-value { color: var(--success); }
+
+        /* CHART */
+        .chart-container { position: relative; height: 350px; }
+
+        /* CASHFLOW TABLE */
+        .cf-table-wrap {
+            overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border);
+            max-height: 400px; overflow-y: auto;
+        }
+        .cf-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .cf-table thead { background: var(--bg-tertiary); position: sticky; top: 0; }
+        .cf-table th {
+            padding: 10px 14px; text-align: right; font-weight: 600; font-size: 11px;
+            text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+        .cf-table th:first-child { text-align: left; }
+        .cf-table td {
+            padding: 10px 14px; border-bottom: 1px solid var(--border-light);
+            text-align: right; font-family: 'Space Mono', monospace; font-size: 12px;
+        }
+        .cf-table td:first-child { text-align: left; font-family: 'DM Sans', sans-serif; }
+        .cf-table tbody tr:hover { background: var(--bg-tertiary); }
+
+        /* EXPLANATION */
+        .explanation {
+            background: var(--blue-light); border-radius: var(--radius-md);
+            padding: 20px 24px; margin-bottom: 28px; border-left: 3px solid var(--blue);
+        }
+        .explanation h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #1E40AF; }
+        .explanation p { font-size: 13px; color: #1E3A5F; line-height: 1.7; }
+
+        .disclaimer {
+            background: var(--bg-tertiary); border-radius: var(--radius-md);
+            padding: 20px 24px; margin-top: 36px; border-left: 3px solid var(--text-muted);
+        }
+        .disclaimer h4 { font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .disclaimer p { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+
+        .footer {
+            background: #3D4452; color: rgba(255,255,255,0.5);
+            text-align: center; padding: 28px 24px; font-size: 13px;
+        }
+        .footer a { color: var(--accent); text-decoration: none; }
+
+        @media (max-width: 768px) {
+            .header-title { display: none; }
+            .chart-container { height: 280px; }
+            .hero { padding: 40px 20px 36px; }
+            .main { padding: 24px 16px 60px; }
+            .card { padding: 20px; }
+            .impact-grid { grid-template-columns: 1fr; }
+            .metric-value { font-size: 26px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<div style="background:#3D4452;padding:10px 0;text-align:center;font-size:13px;">
+    <div style="max-width:1100px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;">
+        <span style="color:rgba(255,255,255,0.5);font-weight:600;">Más simuladores:</span>
+        <a href="https://rfinanciera.github.io/Comisiones.brokers/" style="background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);padding:5px 14px;border-radius:100px;text-decoration:none;font-weight:500;font-size:12px;">💼 Comisiones Brokers</a>
+        <a href="https://rfinanciera.github.io/Rotacion-de-ONs/" style="background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);padding:5px 14px;border-radius:100px;text-decoration:none;font-weight:500;font-size:12px;">🔄 Rotación de ONs</a>
+        <a href="#" style="background:var(--accent);color:white;padding:5px 14px;border-radius:100px;text-decoration:none;font-weight:600;font-size:12px;">📐 Duration y Sensibilidad</a>
+        <a href="https://rfinanciera.github.io/simulador.carry.trade/" style="background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);padding:5px 14px;border-radius:100px;text-decoration:none;font-weight:500;font-size:12px;">💱 Carry Trade</a>
+    </div>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+    <div class="header-inner">
+        <a class="header-brand" href="#">
+            <img src="revfin_logo.png" alt="Revolución Financiera">
+            <div class="header-brand-text">
+                <span class="header-brand-name">Revolución Financiera</span>
+                <span class="header-brand-sub">Finanzas Personales · Inversiones · Economía</span>
+            </div>
+        </a>
+        <span class="header-title">Duration y Sensibilidad</span>
+    </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+    <h1>Entendé la <span>Duration</span> y Sensibilidad de un bono</h1>
+    <p>Simulá cómo cambia el precio de un bono cuando se mueve la tasa. Modificá los parámetros y velo en tiempo real.</p>
+</section>
+
+<!-- MAIN -->
+<main class="main">
+
+    <!-- Bond Parameters -->
+    <div class="card">
+        <div class="card-title">🔧 Parámetros del bono</div>
+        <div class="card-subtitle">Modificá los valores para ver cómo cambian la duration y la sensibilidad</div>
+
+        <div class="input-grid">
+            <div class="input-group">
+                <label>Valor nominal (USD)</label>
+                <input type="number" id="nominal" value="100" min="1" oninput="calcular()">
+            </div>
+            <div class="input-group">
+                <label>Cupón anual (%)</label>
+                <input type="number" id="cupon" value="5" min="0" max="30" step="0.25" oninput="calcular()">
+            </div>
+            <div class="input-group">
+                <label>Años al vencimiento</label>
+                <input type="number" id="anios" value="5" min="1" max="30" step="1" oninput="calcular()">
+            </div>
+            <div class="input-group">
+                <label>TIR / Tasa de mercado (%)</label>
+                <input type="number" id="tir" value="7" min="0.5" max="30" step="0.25" oninput="calcular()">
+            </div>
+            <div class="input-group">
+                <label>Pagos por año</label>
+                <select id="frecuencia" onchange="calcular()">
+                    <option value="2" selected>Semestral (2)</option>
+                    <option value="1">Anual (1)</option>
+                    <option value="4">Trimestral (4)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Amortización</label>
+                <select id="amortizacion" onchange="calcular()">
+                    <option value="bullet">Bullet (todo al final)</option>
+                    <option value="3">Últimas 3 cuotas</option>
+                    <option value="5">Últimas 5 cuotas</option>
+                    <option value="10">Últimas 10 cuotas</option>
+                    <option value="all">Todas las cuotas</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics" id="metricsArea">
+        <div class="metric metric-blue">
+            <div class="metric-label">Duration</div>
+            <div class="metric-value" id="metDuration">—</div>
+            <div class="metric-unit">años</div>
+        </div>
+        <div class="metric metric-accent">
+            <div class="metric-label">Duration Modificada</div>
+            <div class="metric-value" id="metDurMod">—</div>
+            <div class="metric-unit">%/1% tasa</div>
+        </div>
+        <div class="metric metric-green">
+            <div class="metric-label">Precio del bono</div>
+            <div class="metric-value" id="metPrecio">—</div>
+            <div class="metric-unit">USD</div>
+        </div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="explanation">
+        <h4>📘 ¿Qué significan estos números?</h4>
+        <p><strong>Duration:</strong> es el tiempo promedio ponderado en que recuperás tu inversión. Un bono con duration 4.2 años significa que, en promedio, tardás 4.2 años en recuperar tu plata vía cupones y capital.<br><br>
+        <strong>Duration Modificada:</strong> mide la sensibilidad del precio ante cambios en la tasa. Si la DM es 3.8, significa que por cada 1% que suba la tasa, el precio del bono baja aprox. 3.8% (y viceversa).<br><br>
+        <strong>Regla clave:</strong> a mayor duration, más sensible es el bono a cambios de tasa. Bonos largos son más volátiles que bonos cortos.</p>
+    </div>
+
+    <!-- Sensitivity Slider -->
+    <div class="card">
+        <div class="card-title">🎛️ Simulador de sensibilidad</div>
+        <div class="card-subtitle">Mové el slider para ver cómo cambia el precio del bono ante variaciones de tasa</div>
+
+        <div class="slider-section">
+            <div class="slider-header">
+                <span class="slider-title">Cambio en la tasa:</span>
+                <span class="slider-value-display slider-neutral" id="sliderDisplay">0.00%</span>
+            </div>
+            <input type="range" id="tasaSlider" min="-600" max="600" value="0" step="5" oninput="updateSlider()">
+            <div class="slider-labels">
+                <span>-6.00%</span>
+                <span>Tasa actual</span>
+                <span>+6.00%</span>
+            </div>
+        </div>
+
+        <div class="impact-grid" id="impactArea">
+            <div class="impact-card impact-gain" id="impactPrice">
+                <h4>Nuevo precio</h4>
+                <div class="impact-value" id="impactPriceVal">—</div>
+                <div class="impact-sub" id="impactPriceSub"></div>
+            </div>
+            <div class="impact-card impact-gain" id="impactPnl">
+                <h4>Ganancia / Pérdida</h4>
+                <div class="impact-value" id="impactPnlVal">—</div>
+                <div class="impact-sub" id="impactPnlSub"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart: Price vs Yield curve -->
+    <div class="card">
+        <div class="card-title">📈 Curva Precio vs Tasa</div>
+        <div class="card-subtitle">El punto azul muestra el precio actual. Observá cómo la relación no es lineal (convexidad)</div>
+        <div class="chart-container">
+            <canvas id="priceChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Cash Flow Table -->
+    <div class="card">
+        <div class="card-title">📋 Detalle de flujos de caja</div>
+        <div class="card-subtitle">Cada flujo ponderado por su valor actual contribuye a la duration</div>
+        <div id="cfTableArea"></div>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+        <h4>⚠️ Aviso</h4>
+        <p>Este simulador es educativo. Los cálculos asumen un bono bullet (paga cupones periódicos y devuelve capital al vencimiento) con tasa fija en USD. No contempla crédito, liquidez ni spread. Las fórmulas usan la definición clásica de Duration y Duration Modificada. Herramienta creada por Revolución Financiera.</p>
+    </div>
+
+</main>
+
+<!-- YOUTUBE CTA -->
+<div style="max-width:1100px;margin:0 auto;padding:0 24px 40px;">
+    <div style="background:linear-gradient(135deg,#FAFBFC,#F1F3F5);border-radius:16px;padding:32px;text-align:center;border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;">
+            <img src="revfin_logo.png" alt="Revolución Financiera" style="width:48px;height:48px;border-radius:10px;">
+        </div>
+        <p style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">¿Querés más videos sobre inversiones y finanzas personales? 👇</p>
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">www.youtube.com/@Revolucion.Financiera</p>
+        <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">
+            <a href="https://www.youtube.com/@Revolucion.Financiera" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#FF0000;color:white;padding:14px 28px;border-radius:100px;text-decoration:none;font-weight:700;font-size:15px;box-shadow:0 4px 12px rgba(255,0,0,0.25);">▶ Suscribite a Revolución Financiera</a>
+            <a href="https://www.instagram.com/revolucionfinancieraok/" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#F77737);color:white;padding:14px 28px;border-radius:100px;text-decoration:none;font-weight:700;font-size:15px;box-shadow:0 4px 12px rgba(131,58,180,0.25);">📷 Seguinos en Instagram</a>
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <p>Hecho con ❤️ por <a href="https://youtube.com/@Revolucion.Financiera" target="_blank">Revolución Financiera</a></p>
+</footer>
+
+<script>
+let priceChart = null;
+
+// =========================================
+// BOND MATH
+// =========================================
+function getAmortSchedule(nominal, n, amortType) {
+    // Returns array of capital payments per period
+    const schedule = new Array(n).fill(0);
+    if (amortType === 'bullet') {
+        schedule[n - 1] = nominal;
+    } else if (amortType === 'all') {
+        const amortPerPeriod = nominal / n;
+        for (let i = 0; i < n; i++) schedule[i] = amortPerPeriod;
+    } else {
+        const numCuotas = parseInt(amortType);
+        const startPeriod = n - numCuotas;
+        const amortPerPeriod = nominal / numCuotas;
+        for (let i = startPeriod; i < n; i++) schedule[i] = amortPerPeriod;
+    }
+    return schedule;
+}
+
+function bondPrice(nominal, cuponAnual, anios, tir, freq, amortType) {
+    const n = anios * freq;
+    const y = (tir / 100) / freq;
+    const amortSchedule = getAmortSchedule(nominal, n, amortType || 'bullet');
+    let price = 0;
+    let remainingNominal = nominal;
+
+    for (let t = 1; t <= n; t++) {
+        const cuponPago = (cuponAnual / 100) * remainingNominal / freq;
+        const capitalPago = amortSchedule[t - 1];
+        const cf = cuponPago + capitalPago;
+        price += cf / Math.pow(1 + y, t);
+        remainingNominal -= capitalPago;
+    }
+    return price;
+}
+
+function bondDuration(nominal, cuponAnual, anios, tir, freq, amortType) {
+    const n = anios * freq;
+    const y = (tir / 100) / freq;
+    const amortSchedule = getAmortSchedule(nominal, n, amortType || 'bullet');
+    let price = 0;
+    let weightedTime = 0;
+    const flows = [];
+    let remainingNominal = nominal;
+
+    for (let t = 1; t <= n; t++) {
+        const cuponPago = (cuponAnual / 100) * remainingNominal / freq;
+        const capitalPago = amortSchedule[t - 1];
+        const cf = cuponPago + capitalPago;
+        const pv = cf / Math.pow(1 + y, t);
+        const timeYears = t / freq;
+        price += pv;
+        weightedTime += pv * timeYears;
+        flows.push({ period: t, timeYears, cashflow: cf, capitalPago, cuponPago, pv, weight: 0, remainingNominal });
+        remainingNominal -= capitalPago;
+    }
+
+    const duration = price > 0 ? weightedTime / price : 0;
+    const durMod = duration / (1 + y);
+
+    flows.forEach(f => { f.weight = price > 0 ? f.pv / price : 0; });
+
+    return { price, duration, durMod, flows };
+}
+
+// =========================================
+// MAIN CALC
+// =========================================
+function calcular() {
+    const nominal = parseFloat(document.getElementById('nominal').value) || 100;
+    const cupon = parseFloat(document.getElementById('cupon').value) || 0;
+    const anios = parseInt(document.getElementById('anios').value) || 5;
+    const tir = parseFloat(document.getElementById('tir').value) || 5;
+    const freq = parseInt(document.getElementById('frecuencia').value) || 2;
+    const amortType = document.getElementById('amortizacion').value;
+
+    const result = bondDuration(nominal, cupon, anios, tir, freq, amortType);
+
+    document.getElementById('metDuration').textContent = result.duration.toFixed(2);
+    document.getElementById('metDurMod').textContent = result.durMod.toFixed(2);
+    document.getElementById('metPrecio').textContent = result.price.toFixed(2);
+
+    updateSlider();
+    renderPriceChart(nominal, cupon, anios, tir, freq, result.price, amortType);
+    renderCFTable(result.flows, result.price, freq);
+}
+
+// =========================================
+// SLIDER
+// =========================================
+function updateSlider() {
+    const nominal = parseFloat(document.getElementById('nominal').value) || 100;
+    const cupon = parseFloat(document.getElementById('cupon').value) || 0;
+    const anios = parseInt(document.getElementById('anios').value) || 5;
+    const tir = parseFloat(document.getElementById('tir').value) || 5;
+    const freq = parseInt(document.getElementById('frecuencia').value) || 2;
+    const amortType = document.getElementById('amortizacion').value;
+    const sliderVal = parseInt(document.getElementById('tasaSlider').value);
+    const cambio = sliderVal / 100;
+
+    const precioActual = bondPrice(nominal, cupon, anios, tir, freq, amortType);
+    const nuevaTasa = tir + cambio;
+    const nuevoPrecio = nuevaTasa > 0 ? bondPrice(nominal, cupon, anios, nuevaTasa, freq, amortType) : precioActual;
+    const pnl = nuevoPrecio - precioActual;
+    const pnlPct = (pnl / precioActual) * 100;
+
+    // Display
+    const display = document.getElementById('sliderDisplay');
+    display.textContent = (cambio >= 0 ? '+' : '') + cambio.toFixed(2) + '%';
+    display.className = 'slider-value-display ' + (cambio > 0 ? 'slider-negative' : cambio < 0 ? 'slider-positive' : 'slider-neutral');
+
+    // Impact cards
+    const priceCard = document.getElementById('impactPrice');
+    const pnlCard = document.getElementById('impactPnl');
+
+    document.getElementById('impactPriceVal').textContent = 'USD ' + nuevoPrecio.toFixed(2);
+    document.getElementById('impactPriceSub').textContent = 'Tasa: ' + nuevaTasa.toFixed(2) + '%';
+
+    if (pnl >= 0) {
+        document.getElementById('impactPnlVal').textContent = '+USD ' + pnl.toFixed(2);
+        document.getElementById('impactPnlSub').textContent = '+' + pnlPct.toFixed(2) + '% del precio';
+        pnlCard.className = 'impact-card impact-gain';
+        priceCard.className = 'impact-card impact-gain';
+    } else {
+        document.getElementById('impactPnlVal').textContent = '-USD ' + Math.abs(pnl).toFixed(2);
+        document.getElementById('impactPnlSub').textContent = pnlPct.toFixed(2) + '% del precio';
+        pnlCard.className = 'impact-card impact-loss';
+        priceCard.className = 'impact-card impact-loss';
+    }
+
+    if (cambio === 0) {
+        priceCard.className = 'impact-card';
+        priceCard.style.background = 'var(--bg-tertiary)';
+        pnlCard.className = 'impact-card';
+        pnlCard.style.background = 'var(--bg-tertiary)';
+    } else {
+        priceCard.style.background = '';
+        pnlCard.style.background = '';
+    }
+}
+
+// =========================================
+// PRICE CHART
+// =========================================
+function renderPriceChart(nominal, cupon, anios, tir, freq, currentPrice, amortType) {
+    if (priceChart) priceChart.destroy();
+
+    const minTasa = Math.max(0.5, tir - 5);
+    const maxTasa = tir + 5;
+    const step = 0.25;
+    const labels = [];
+    const prices = [];
+    let currentIdx = 0;
+
+    for (let t = minTasa; t <= maxTasa; t += step) {
+        labels.push(t.toFixed(2) + '%');
+        prices.push(bondPrice(nominal, cupon, anios, t, freq, amortType));
+        if (Math.abs(t - tir) < 0.01) currentIdx = labels.length - 1;
+    }
+
+    // Create point sizes array (bigger for current)
+    const pointSizes = prices.map((_, i) => i === currentIdx ? 8 : 0);
+    const pointColors = prices.map((_, i) => i === currentIdx ? '#3B82F6' : 'transparent');
+
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    priceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: prices,
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: pointSizes,
+                pointBackgroundColor: pointColors,
+                pointBorderColor: '#FFFFFF',
+                pointBorderWidth: 2,
+                borderWidth: 3,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => 'Tasa: ' + items[0].label,
+                        label: (item) => 'Precio: USD ' + item.raw.toFixed(2),
+                    },
+                    backgroundColor: '#1A1D23',
+                    padding: 12,
+                    cornerRadius: 8,
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: '#F1F3F5' },
+                    ticks: {
+                        font: { family: 'Space Mono', size: 10 },
+                        color: '#8C939E',
+                        maxTicksLimit: 12,
+                    },
+                    title: { display: true, text: 'Tasa (%)', font: { family: 'DM Sans', size: 13, weight: 600 }, color: '#5A6270' }
+                },
+                y: {
+                    grid: { color: '#F1F3F5' },
+                    ticks: {
+                        font: { family: 'Space Mono', size: 11 },
+                        color: '#8C939E',
+                        callback: v => 'USD ' + v.toFixed(1),
+                    },
+                    title: { display: true, text: 'Precio', font: { family: 'DM Sans', size: 13, weight: 600 }, color: '#5A6270' }
+                }
+            }
+        }
+    });
+}
+
+// =========================================
+// CASH FLOW TABLE
+// =========================================
+function renderCFTable(flows, price, freq) {
+    let html = `<div class="cf-table-wrap"><table class="cf-table">
+        <thead><tr>
+            <th style="text-align:left;">Período</th>
+            <th>Tiempo (años)</th>
+            <th>Cupón</th>
+            <th>Capital</th>
+            <th>Flujo Total</th>
+            <th>Valor Actual</th>
+            <th>Peso (%)</th>
+            <th>Peso × Tiempo</th>
+        </tr></thead><tbody>`;
+
+    let totalWeight = 0;
+    let totalWeightedTime = 0;
+
+    flows.forEach(f => {
+        const wt = f.weight * f.timeYears;
+        totalWeight += f.weight;
+        totalWeightedTime += wt;
+        html += `<tr>
+            <td>${f.period}</td>
+            <td>${f.timeYears.toFixed(2)}</td>
+            <td>${f.cuponPago.toFixed(2)}</td>
+            <td>${f.capitalPago > 0 ? f.capitalPago.toFixed(2) : '—'}</td>
+            <td>${f.cashflow.toFixed(2)}</td>
+            <td>${f.pv.toFixed(2)}</td>
+            <td>${(f.weight * 100).toFixed(2)}%</td>
+            <td>${wt.toFixed(4)}</td>
+        </tr>`;
+    });
+
+    html += `</tbody><tfoot><tr style="background:var(--bg-tertiary);font-weight:700;">
+        <td>Total</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>${price.toFixed(2)}</td>
+        <td>${(totalWeight * 100).toFixed(2)}%</td>
+        <td style="color:var(--blue);font-family:'Space Mono',monospace;">${totalWeightedTime.toFixed(4)}</td>
+    </tr></tfoot></table></div>`;
+
+    html += `<div style="margin-top:12px;padding:10px 14px;background:var(--blue-light);border-radius:var(--radius-sm);font-size:13px;color:#1E40AF;">
+        <strong>Duration</strong> = Suma de (Peso × Tiempo) = <strong>${totalWeightedTime.toFixed(4)} años</strong>
+    </div>`;
+
+    document.getElementById('cfTableArea').innerHTML = html;
+}
+
+// Init
+calcular();
+</script>
+
+</body>
+</html>
